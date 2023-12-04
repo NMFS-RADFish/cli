@@ -4,7 +4,7 @@
   "description": "A cli tool for bootstrapping a radfish app",
   "type": "module",
   "scripts": {
-    "test": "jest --passWithNoTests"
+    "test": "exit 1"
   },
   "keywords": [],
   "author": "",
