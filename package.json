@@ -3,9 +3,11 @@
   "version": "0.0.0",
   "description": "A cli tool for bootstrapping a radfish app",
   "type": "module",
+  "bin": {
+    "create-radfish-app": "./index.js"
+  },
   "scripts": {
-    "test": "jest --passWithNoTests",
-    "create-radfish-app": "node index.js"
+    "test": "jest --passWithNoTests"
   },
   "main": "index.js",
   "dependencies": {
