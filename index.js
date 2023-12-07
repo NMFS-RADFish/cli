@@ -90,10 +90,10 @@ async function scaffoldRadFishApp() {
     });
   }
 
+  // this will clone the radfish app boilerplate and spin it up
   function bootstrapApp() {
-    const repoUrl = "https://github.com/gambinish/uswds-cra-pwa-ts";
-    const targetDirectory = "../create-radfish-app-temp";
-    // this will clone the radfish app and spin it up
+    const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // note that each user/developer will need to have ssh keypair setup in github org
+    const targetDirectory = "../demo-boilerplate";
 
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
