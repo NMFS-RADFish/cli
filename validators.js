@@ -1,4 +1,4 @@
-import { regionConfig, appTypeConfig } from "./config.js";
+import { regionConfig } from "./config.js";
 
 function validateRegion(regionCode) {
   let isValid = false;
@@ -10,14 +10,4 @@ function validateRegion(regionCode) {
   return isValid;
 }
 
-function validateAppType(appType) {
-  let isValid = false;
-  appTypeConfig.forEach((type) => {
-    if (appType === type) {
-      isValid = true;
-    }
-  });
-  return isValid;
-}
-
-export { validateRegion, validateAppType };
+export { validateRegion };

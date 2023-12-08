@@ -2,19 +2,18 @@
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";
-import { confirm } from "@inquirer/prompts";
+import { confirm, input } from "@inquirer/prompts";
 import select from "@inquirer/select";
 import { Command } from "commander";
 import ora from "ora";
-import { validateRegion, validateAppType } from "./validators.js";
-import { regionConfig, appTypeConfig, applicationTypes } from "./config.js";
+import { validateRegion } from "./validators.js";
+import { regionConfig } from "./config.js";
 
 const program = new Command();
 
 // checking to see if vals are provided as argv
 // if not, proceed with inquirer
 let regionProvidedAsArgv = false;
-let typeProvidedAsArgv = false;
 
 program
   .name("Create Radfish App")
@@ -22,13 +21,10 @@ program
   .version("0.0.1");
 
 // program options
-program
-  .option("-r --region <string>", "specified region")
-  .option("-t --type <string>", "type of application");
+program.option("-r --region <string>", "specified region");
 
 program.action((args) => {
   const isValidRegion = validateRegion(args.region);
-  const isValidAppType = validateAppType(args.type);
 
   if (!isValidRegion) {
     const regionCodes = regionConfig
@@ -38,17 +34,6 @@ program.action((args) => {
     console.error(
       "Invalid region code. Here are the valid regions: ",
       regionCodes
-    );
-  }
-
-  if (!isValidAppType) {
-    const appTypeCodes = appTypeConfig
-      .map((type) => type)
-      .join(" , ")
-      .replace(/, $/, ""); // remove comma from last elem
-    console.error(
-      "Invalid appType code. Here are the valid appType codes: ",
-      appTypeCodes
     );
   }
 
@@ -62,11 +47,11 @@ if (options && options.region) {
   regionProvidedAsArgv = true;
 }
 
-if (options && options.type) {
-  typeProvidedAsArgv = true;
-}
-
 async function scaffoldRadFishApp() {
+  async function defineAppName() {
+    return await input({ message: "Enter the name of your application" });
+  }
+
   async function defineRegion() {
     return await select({
       name: "region",
@@ -75,25 +60,17 @@ async function scaffoldRadFishApp() {
     });
   }
 
-  async function defineApplicationType() {
-    return await select({
-      name: "region",
-      message: "Which NOAA region will you be building your app for?",
-      choices: applicationTypes,
-    });
-  }
-
-  async function confirmConfiguration(region, applicationType) {
+  async function confirmConfiguration(region) {
     return await confirm({
-      message: `You are about to scaffold an ${applicationType} application for the region of ${region}.
+      message: `You are about to scaffold an application for the region of ${region}.
       Okay to proceed?`,
     });
   }
 
   // this will clone the radfish app boilerplate and spin it up
-  function bootstrapApp() {
+  function bootstrapApp(region, appName) {
     const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // note that each user/developer will need to have ssh keypair setup in github org
-    const targetDirectory = "../demo-boilerplate";
+    const targetDirectory = `../${appName.toLowerCase().replace(/\s+/g, "-")}`;
 
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
@@ -134,15 +111,13 @@ async function scaffoldRadFishApp() {
     spinner.stop();
   }
 
+  const appName = await defineAppName();
   const region = options.region ? options.region : await defineRegion();
-  const applicationType = options.type
-    ? options.type
-    : await defineApplicationType();
 
-  const confirmation = await confirmConfiguration(region, applicationType);
+  const confirmation = await confirmConfiguration(region);
 
   if (confirmation) {
-    await bootstrapApp(region, applicationType);
+    await bootstrapApp(region, appName);
   }
 }
 

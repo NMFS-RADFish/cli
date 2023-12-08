@@ -50,8 +50,6 @@ const regionConfig = [
   },
 ];
 
-const appTypeConfig = ["evtr"];
-
 const applicationTypes = [
   {
     name: "Electronic Vessel Trip Reporting (eVTR)",
@@ -68,4 +66,4 @@ const applicationTypes = [
   },
 ];
 
-export { regionConfig, appTypeConfig, applicationTypes };
+export { regionConfig, applicationTypes };
