@@ -21,10 +21,12 @@ program
   .version("0.0.1");
 
 // program options
-program.option("-r --region <string>", "specified region");
+program
+  .argument("<repository>")
+  .option("-r --region <string>", "specified region");
 
-program.action((args) => {
-  const isValidRegion = validateRegion(args.region);
+program.action((repository, options) => {
+  const isValidRegion = validateRegion(options.region);
 
   if (!isValidRegion) {
     const regionCodes = regionConfig
@@ -37,7 +39,7 @@ program.action((args) => {
     );
   }
 
-  scaffoldRadFishApp();
+  scaffoldRadFishApp(repository);
 });
 
 // check options passed in via cli command
@@ -47,11 +49,7 @@ if (options && options.region) {
   regionProvidedAsArgv = true;
 }
 
-async function scaffoldRadFishApp() {
-  async function defineAppName() {
-    return await input({ message: "Enter the name of your application" });
-  }
-
+async function scaffoldRadFishApp(repository) {
   async function defineRegion() {
     return await select({
       name: "region",
@@ -62,15 +60,15 @@ async function scaffoldRadFishApp() {
 
   async function confirmConfiguration(region) {
     return await confirm({
-      message: `You are about to scaffold an application for the region of ${region}.
+      message: `You are about to scaffold an application for the region of ${region} in the following project directory: ../${repository}
       Okay to proceed?`,
     });
   }
 
   // this will clone the radfish app boilerplate and spin it up
-  function bootstrapApp(region, appName) {
-    const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // note that each user/developer will need to have ssh keypair setup in github org
-    const targetDirectory = `../${appName.toLowerCase().replace(/\s+/g, "-")}`;
+  function bootstrapApp() {
+    const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // via ssh each user/developer will need to have ssh keypair setup in github org
+    const targetDirectory = `../${repository.replace(/\s+/g, "-")}`; // remove any whitespaces from filepath...just in case
 
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
@@ -111,13 +109,12 @@ async function scaffoldRadFishApp() {
     spinner.stop();
   }
 
-  const appName = await defineAppName();
   const region = options.region ? options.region : await defineRegion();
 
   const confirmation = await confirmConfiguration(region);
 
   if (confirmation) {
-    await bootstrapApp(region, appName);
+    await bootstrapApp();
   }
 }
 
