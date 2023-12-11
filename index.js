@@ -2,7 +2,7 @@
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { join, dirname } from "path";
-import { confirm, input } from "@inquirer/prompts";
+import { confirm } from "@inquirer/prompts";
 import select from "@inquirer/select";
 import { Command } from "commander";
 import ora from "ora";
