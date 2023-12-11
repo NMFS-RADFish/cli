@@ -8,6 +8,7 @@ import { Command } from "commander";
 import ora from "ora";
 import { validateRegion } from "./validators.js";
 import { regionConfig } from "./config.js";
+import path from "path";
 
 const program = new Command();
 
@@ -22,10 +23,10 @@ program
 
 // program options
 program
-  .argument("<repository>")
+  .argument("<projectDirectoryPath>")
   .option("-r --region <string>", "specified region");
 
-program.action((repository, options) => {
+program.action((projectDirectoryPath, options) => {
   const isValidRegion = validateRegion(options.region);
 
   if (!isValidRegion) {
@@ -39,7 +40,7 @@ program.action((repository, options) => {
     );
   }
 
-  scaffoldRadFishApp(repository);
+  scaffoldRadFishApp(projectDirectoryPath);
 });
 
 // check options passed in via cli command
@@ -49,7 +50,12 @@ if (options && options.region) {
   regionProvidedAsArgv = true;
 }
 
-async function scaffoldRadFishApp(repository) {
+async function scaffoldRadFishApp(projectDirectoryPath) {
+  const currentDirectory = path.resolve("../");
+  const targetDirectory = currentDirectory.concat(
+    `/${projectDirectoryPath.replace(/\s+/g, "-")}`
+  ); // remove any whitespaces from filepath...just in case
+
   async function defineRegion() {
     return await select({
       name: "region",
@@ -60,7 +66,7 @@ async function scaffoldRadFishApp(repository) {
 
   async function confirmConfiguration(region) {
     return await confirm({
-      message: `You are about to scaffold an application for the region of ${region} in the following project directory: ../${repository}
+      message: `You are about to scaffold an application for the region of ${region} in the following project directory: ${targetDirectory}
       Okay to proceed?`,
     });
   }
@@ -68,7 +74,6 @@ async function scaffoldRadFishApp(repository) {
   // this will clone the radfish app boilerplate and spin it up
   function bootstrapApp() {
     const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // via ssh each user/developer will need to have ssh keypair setup in github org
-    const targetDirectory = `../${repository.replace(/\s+/g, "-")}`; // remove any whitespaces from filepath...just in case
 
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
@@ -85,8 +90,7 @@ async function scaffoldRadFishApp(repository) {
     }
 
     // Change to the cloned repository directory
-    const repoPath = join(__dirname, targetDirectory);
-    process.chdir(repoPath);
+    process.chdir(targetDirectory);
 
     // Run an npm script (replace 'your-script-name' with the actual npm script name)
     try {
