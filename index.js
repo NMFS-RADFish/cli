@@ -74,10 +74,6 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
   // this will clone the radfish app boilerplate and spin it up
   function bootstrapApp() {
     const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // via ssh each user/developer will need to have ssh keypair setup in github org
-
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-
     const spinner = ora("Setting up application").start();
 
     // Clone the repository
