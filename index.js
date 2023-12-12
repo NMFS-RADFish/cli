@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 import { execSync } from "child_process";
-import { fileURLToPath } from "url";
-import { join, dirname } from "path";
 import { confirm } from "@inquirer/prompts";
 import select from "@inquirer/select";
 import { Command } from "commander";
@@ -12,19 +10,13 @@ import path from "path";
 
 const program = new Command();
 
-// checking to see if vals are provided as argv
-// if not, proceed with inquirer
-let regionProvidedAsArgv = false;
-
 program
   .name("Create Radfish App")
   .description("The CLI to bootstrap a radfish app!")
   .version("0.0.1");
 
 // program options
-program
-  .argument("<projectDirectoryPath>")
-  .option("-r --region <string>", "specified region");
+program.argument("<projectDirectoryPath>").option("-r --region <string>", "specified region");
 
 program.action((projectDirectoryPath, options) => {
   const isValidRegion = validateRegion(options.region);
@@ -34,10 +26,7 @@ program.action((projectDirectoryPath, options) => {
       .map((region) => region.code)
       .join(" , ")
       .replace(/, $/, ""); // remove comma from last elem
-    console.error(
-      "Invalid region code. Here are the valid regions: ",
-      regionCodes
-    );
+    console.error("Invalid region code. Here are the valid regions: ", regionCodes);
   }
 
   scaffoldRadFishApp(projectDirectoryPath);
@@ -46,13 +35,10 @@ program.action((projectDirectoryPath, options) => {
 // check options passed in via cli command
 const options = program.opts();
 
-if (options && options.region) {
-  regionProvidedAsArgv = true;
-}
-
 async function scaffoldRadFishApp(projectDirectoryPath) {
-  const targetDirectory = path.resolve(process.cwd(),
-    `${projectDirectoryPath.trim().replace(/\s+/g, "-")}` // replace whitespaces in the filepath
+  const targetDirectory = path.resolve(
+    process.cwd(),
+    `${projectDirectoryPath.trim().replace(/\s+/g, "-")}`, // replace whitespaces in the filepath
   );
 
   async function defineRegion() {
