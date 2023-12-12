@@ -7,6 +7,9 @@
     "create-radfish-app": "./index.js"
   },
   "scripts": {
+    "lint": "eslint *.js",
+    "lint:fix": "eslint --fix *.js",
+    "format": "prettier --write src --config .prettierrc",
     "test": "jest --passWithNoTests"
   },
   "main": "index.js",
