@@ -51,10 +51,9 @@ if (options && options.region) {
 }
 
 async function scaffoldRadFishApp(projectDirectoryPath) {
-  const currentDirectory = path.resolve("../");
-  const targetDirectory = currentDirectory.concat(
-    `/${projectDirectoryPath.replace(/\s+/g, "-")}`
-  ); // remove any whitespaces from filepath...just in case
+  const targetDirectory = path.resolve(process.cwd(),
+    `${projectDirectoryPath.trim().replace(/\s+/g, "-")}` // replace whitespaces in the filepath
+  );
 
   async function defineRegion() {
     return await select({
