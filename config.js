@@ -61,8 +61,7 @@ const applicationTypes = [
   {
     name: "None of the above",
     value: "other",
-    description:
-      "By selecting this option, you are skipping any preconfigured application setup",
+    description: "By selecting this option, you are skipping any preconfigured application setup",
   },
 ];
 
