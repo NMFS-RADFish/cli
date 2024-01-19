@@ -2,15 +2,18 @@
   "name": "cli",
   "version": "0.0.0",
   "description": "A cli tool for bootstrapping a radfish app",
-  "type": "module",
   "bin": {
     "create-radfish-app": "./index.js"
   },
+  "files": [
+    "lib/",
+    "index.js"
+  ],
   "scripts": {
     "lint": "eslint *.js",
     "lint:fix": "eslint --fix *.js",
     "format": "prettier --write src --config .prettierrc",
-    "test": "jest --passWithNoTests"
+    "test": "jest tests/*.spec.js"
   },
   "main": "index.js",
   "dependencies": {
