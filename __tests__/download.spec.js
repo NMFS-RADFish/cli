@@ -28,12 +28,16 @@ describe("downloadFile", () => {
     const download = require("../lib/download");
 
     download.downloadFile("https://example.com", "download/path", (err, res) => {
-      expect(fs.createWriteStream).toHaveBeenCalledWith(expect.stringMatching("download/path"));
-      expect(https.get).toHaveBeenCalledWith("https://example.com", expect.any(Function));
+      try {
+        expect(fs.createWriteStream).toHaveBeenCalledWith(expect.stringMatching("download/path"));
+        expect(https.get).toHaveBeenCalledWith("https://example.com", expect.any(Function));
 
-      expect(err).toBeNull();
-      expect(res).toBeDefined();
-      done();
+        expect(err).toBeNull();
+        expect(res).toBeDefined();
+        done();
+      } catch (err) {
+        done(err);
+      }
     });
   });
 });
@@ -53,14 +57,18 @@ describe("unzip", () => {
     const child_process = require("child_process");
     const download = require("../lib/download");
     download.unzip("filepath", () => {
-      expect(child_process.exec).toHaveBeenCalledWith(
-        `tar -xf filepath --exclude .github`,
-        {
-          cwd: process.cwd(),
-        },
-        expect.any(Function),
-      );
-      done();
+      try {
+        expect(child_process.exec).toHaveBeenCalledWith(
+          `tar -xf filepath --exclude .github`,
+          {
+            cwd: process.cwd(),
+          },
+          expect.any(Function),
+        );
+        done();
+      } catch (err) {
+        done(err);
+      }
     });
   });
 
@@ -73,11 +81,15 @@ describe("unzip", () => {
     const zippath = path.resolve(__dirname, "fixtures", "output.zip");
 
     download.unzip(zippath, (err) => {
-      expect(err).toBeNull();
-      fs.readdir(path.resolve(__dirname, "fixtures", "output"), (err, files) => {
-        expect(files).not.toContain(".github");
-        done();
-      });
+      try {
+        expect(err).toBeNull();
+        fs.readdir(path.resolve(__dirname, "fixtures", "output"), (err, files) => {
+          expect(files).not.toContain(".github");
+          done();
+        });
+      } catch (err) {
+        done(err);
+      }
     });
   });
 });
