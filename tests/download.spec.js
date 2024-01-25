@@ -41,7 +41,7 @@ describe("downloadFile", () => {
 describe("unzip", () => {
   beforeEach(() => {
     jest.resetModules();
-    fs.rmSync(path.resolve(__dirname, "..", "output"), { recursive: true, force: true });
+    fs.rmSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true, force: true });
   });
 
   it("should correctly pass arguments when spawning the tar command process", (done) => {
@@ -72,10 +72,9 @@ describe("unzip", () => {
     const download = require("../lib/download");
     const zippath = path.resolve(__dirname, "fixtures", "output.zip");
 
-    download.unzip(zippath, (err, output) => {
+    download.unzip(zippath, (err) => {
       expect(err).toBeNull();
-      fs.readdir(path.resolve("output"), (err, files) => {
-        console.log(output);
+      fs.readdir(path.resolve(__dirname, "fixtures", "output"), (err, files) => {
         expect(files).not.toContain(".github");
         done();
       });
