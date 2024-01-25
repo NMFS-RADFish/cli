@@ -56,7 +56,7 @@ describe("unzip", () => {
       expect(child_process.exec).toHaveBeenCalledWith(
         `tar -xf filepath --exclude .github`,
         {
-          cwd: expect.stringMatching(process.cwd()),
+          cwd: process.cwd(),
         },
         expect.any(Function),
       );
