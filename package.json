@@ -13,7 +13,12 @@
     "lint": "eslint *.js",
     "lint:fix": "eslint --fix *.js",
     "format": "prettier --write src --config .prettierrc",
-    "test": "jest tests/*.spec.js"
+    "test": "jest"
+  },
+  "jest": {
+    "testMatch": [
+      "**/__tests__/**/*.js?(x)"
+    ]
   },
   "main": "index.js",
   "dependencies": {
