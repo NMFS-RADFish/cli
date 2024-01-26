@@ -40,8 +40,8 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
     try {
       await new Promise((resolve, reject) => {
         downloadFile(
-          "https://github.com/NMFS-RADFish/boilerplate/archive/refs/tags/latest.zip",
-          "boilerplate.zip",
+          "https://github.com/NMFS-RADFish/boilerplate/archive/refs/tags/latest.tar.gz",
+          "boilerplate.tar.gz",
           (err, res) => {
             if (err) {
               return reject(err);
@@ -52,7 +52,7 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
       });
 
       await new Promise((resolve, reject) => {
-        unzip("boilerplate.zip", (err, res) => {
+        unzip("boilerplate.tar.gz", (err, res) => {
           if (err) {
             return reject(err);
           }
@@ -74,7 +74,7 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
       });
 
       await new Promise((resolve, reject) => {
-        fs.rm(path.resolve(process.cwd(), "boilerplate.zip"), (err, res) => {
+        fs.rm(path.resolve(process.cwd(), "boilerplate.tar.gz"), (err, res) => {
           if (err) {
             return reject(err);
           }

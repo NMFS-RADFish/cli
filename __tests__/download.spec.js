@@ -76,7 +76,7 @@ describe("unzip", () => {
     const child_process = require("child_process");
     const fs = require("fs");
     const download = require("../lib/download");
-    const zippath = path.resolve(__dirname, "fixtures", "output.zip");
+    const zippath = path.resolve(__dirname, "fixtures", "output.tar.gz");
 
     download.unzip(zippath, (err) => {
       try {
