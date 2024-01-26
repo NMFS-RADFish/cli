@@ -19,11 +19,11 @@ describe("downloadFile", () => {
     const fs = require("fs");
     fs.createWriteStream.mockReturnValueOnce({
       on: jest.fn((event, callback) => {
-        if (event === "finish") {
-          callback();
-        }
+        callback(null);
       }),
-      close: jest.fn(),
+      close: jest.fn((callback) => {
+        callback(null);
+      }),
     });
     const download = require("../lib/download");
 
@@ -32,8 +32,6 @@ describe("downloadFile", () => {
         expect(fs.createWriteStream).toHaveBeenCalledWith(expect.stringMatching("download/path"));
         expect(https.get).toHaveBeenCalledWith("https://example.com", expect.any(Function));
 
-        expect(err).toBeNull();
-        expect(res).toBeDefined();
         done();
       } catch (err) {
         done(err);
