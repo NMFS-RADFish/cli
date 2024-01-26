@@ -21,9 +21,6 @@ program.action((projectDirectoryPath) => {
   scaffoldRadFishApp(projectDirectoryPath);
 });
 
-// check options passed in via cli command
-const options = program.opts();
-
 async function scaffoldRadFishApp(projectDirectoryPath) {
   const targetDirectory = path.resolve(
     process.cwd(),
