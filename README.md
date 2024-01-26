@@ -11,7 +11,7 @@
 # Creating a project
 
 ```
-npx create-radfish-app my-pwa
+npx @nmfs-radfish/create-radfish-app my-pwa
 ``` 
 
 Provide the cli the name of your new project. A new project will be created using the [default boilerplate template](https://github.com/NMFS-RADFish/boilerplate).
