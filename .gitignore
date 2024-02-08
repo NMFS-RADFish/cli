@@ -1,3 +1,6 @@
+# Test fixtures
+__tests__/fixtures/output
+
 # Logs
 logs
 *.log

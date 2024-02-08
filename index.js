@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-import { execSync } from "child_process";
-import { confirm } from "@inquirer/prompts";
-import select from "@inquirer/select";
-import { Command } from "commander";
-import ora from "ora";
-import { validateRegion } from "./validators.js";
-import { regionConfig } from "./config.js";
-import path from "path";
+const { execSync } = require("child_process");
+const { confirm } = require("@inquirer/prompts");
+const { Command } = require("commander");
+const ora = require("ora");
+const path = require("path");
+const { downloadFile, unzip } = require("./lib/download.js");
+const fs = require("fs");
 
 const program = new Command();
 
@@ -18,22 +17,9 @@ program
 // program options
 program.argument("<projectDirectoryPath>").option("-r --region <string>", "specified region");
 
-program.action((projectDirectoryPath, options) => {
-  const isValidRegion = validateRegion(options.region);
-
-  if (!isValidRegion) {
-    const regionCodes = regionConfig
-      .map((region) => region.code)
-      .join(" , ")
-      .replace(/, $/, ""); // remove comma from last elem
-    console.error("Invalid region code. Here are the valid regions: ", regionCodes);
-  }
-
+program.action((projectDirectoryPath) => {
   scaffoldRadFishApp(projectDirectoryPath);
 });
-
-// check options passed in via cli command
-const options = program.opts();
 
 async function scaffoldRadFishApp(projectDirectoryPath) {
   const targetDirectory = path.resolve(
@@ -41,31 +27,64 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
     `${projectDirectoryPath.trim().replace(/\s+/g, "-")}`, // replace whitespaces in the filepath
   );
 
-  async function defineRegion() {
-    return await select({
-      name: "region",
-      message: "Which NOAA region will you be building your app for?",
-      choices: regionConfig,
-    });
-  }
-
-  async function confirmConfiguration(region) {
+  async function confirmConfiguration() {
     return await confirm({
-      message: `You are about to scaffold an application for the region of ${region} in the following project directory: ${targetDirectory}
+      message: `You are about to scaffold an application in the following project directory: ${targetDirectory}
       Okay to proceed?`,
     });
   }
 
-  // this will clone the radfish app boilerplate and spin it up
-  function bootstrapApp() {
-    const repoUrl = "git@github.com:NMFS-RADFish/boilerplate.git"; // via ssh each user/developer will need to have ssh keypair setup in github org
+  async function bootstrapApp() {
     const spinner = ora("Setting up application").start();
 
-    // Clone the repository
     try {
-      execSync(`git clone ${repoUrl} ${targetDirectory}`);
-      console.log(`Repository cloned successfully.`);
+      await new Promise((resolve, reject) => {
+        downloadFile(
+          "https://github.com/NMFS-RADFish/boilerplate/archive/refs/tags/latest.tar.gz",
+          "boilerplate.tar.gz",
+          (err, res) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(res);
+          },
+        );
+      });
+
+      await new Promise((resolve, reject) => {
+        unzip("boilerplate.tar.gz", (err, res) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(res);
+        });
+      });
+
+      await new Promise((resolve, reject) => {
+        fs.rename(
+          path.resolve(process.cwd(), "boilerplate-latest"),
+          path.resolve(process.cwd(), targetDirectory),
+          (err, res) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(res);
+          },
+        );
+      });
+
+      await new Promise((resolve, reject) => {
+        fs.rm(path.resolve(process.cwd(), "boilerplate.tar.gz"), (err, res) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(res);
+        });
+      });
+
+      console.log(`Project successfully created.`);
     } catch (error) {
+      console.log(error);
       console.error(`Error cloning repository: ${error.message}`);
       process.exit(1);
     }
@@ -94,9 +113,7 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
     spinner.stop();
   }
 
-  const region = options.region ? options.region : await defineRegion();
-
-  const confirmation = await confirmConfiguration(region);
+  const confirmation = await confirmConfiguration();
 
   if (confirmation) {
     await bootstrapApp();
