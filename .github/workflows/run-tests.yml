@@ -24,4 +24,5 @@ jobs:
         run: npm run lint
 
       - name: Run tests
+        shell: sh
         run: npm test
