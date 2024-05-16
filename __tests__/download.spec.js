@@ -30,7 +30,18 @@ describe("downloadFile", () => {
     download.downloadFile("https://example.com", "download/path", (err, res) => {
       try {
         expect(fs.createWriteStream).toHaveBeenCalledWith(expect.stringMatching("download/path"));
-        expect(https.get).toHaveBeenCalledWith("https://example.com", expect.any(Function));
+        expect(https.get).toHaveBeenCalledWith(
+          {
+            hostname: "example.com",
+            path: "/",
+            headers: {
+              Accept: "application/vnd.github+json",
+              "User-Agent": expect.stringMatching(/radfish-cli\/\d+\.\d+.\d+/),
+              "X-GitHub-Api-Version": "2022-11-28",
+            },
+          },
+          expect.any(Function),
+        );
 
         done();
       } catch (err) {
@@ -44,6 +55,7 @@ describe("unzip", () => {
   beforeEach(() => {
     jest.resetModules();
     fs.rmSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true, force: true });
+    fs.mkdirSync(path.resolve(__dirname, "fixtures", "output"));
   });
 
   it("should correctly pass arguments when spawning the tar command process", (done) => {
@@ -54,10 +66,10 @@ describe("unzip", () => {
     }));
     const child_process = require("child_process");
     const download = require("../lib/download");
-    download.unzip("filepath", () => {
+    download.unzip("filepath", { outputDirectoryPath: "my-app" }, () => {
       try {
         expect(child_process.exec).toHaveBeenCalledWith(
-          `tar -xf filepath --exclude .github`,
+          `tar -x -f filepath -C my-app --exclude .github --strip=3 */examples/main`,
           {
             cwd: process.cwd(),
           },
@@ -77,11 +89,12 @@ describe("unzip", () => {
     const fs = require("fs");
     const download = require("../lib/download");
     const zippath = path.resolve(__dirname, "fixtures", "output.tar.gz");
+    const targetDirectoryPath = path.resolve(__dirname, "fixtures", "output");
 
-    download.unzip(zippath, (err) => {
+    download.unzip(zippath, { outputDirectoryPath: targetDirectoryPath }, (err) => {
       try {
         expect(err).toBeNull();
-        fs.readdir(path.resolve(__dirname, "fixtures", "output"), (err, files) => {
+        fs.readdir(targetDirectoryPath, (err, files) => {
           expect(files).not.toContain(".github");
           done();
         });

@@ -6,13 +6,15 @@ const ora = require("ora");
 const path = require("path");
 const { downloadFile, unzip } = require("./lib/download.js");
 const fs = require("fs");
+const os = require("os");
+const crypto = require("crypto");
 
 const program = new Command();
 
 program
   .name("Create Radfish App")
   .description("The CLI to bootstrap a radfish app!")
-  .version("0.0.1");
+  .version("0.0.2");
 
 // program options
 program.argument("<projectDirectoryPath>").option("-r --region <string>", "specified region");
@@ -36,12 +38,28 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
 
   async function bootstrapApp() {
     const spinner = ora("Setting up application").start();
+    const ref = "latest";
 
     try {
+      const temporaryDirectoryPath = await new Promise((resolve, reject) => {
+        fs.mkdtemp(path.join(os.tmpdir(), "radfish-"), (err, folder) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve(folder);
+        });
+      });
+
+      const uuid = crypto.createHash("sha256").update(crypto.randomBytes(255)).digest("hex");
+      const tarballFileName = `${uuid}.tar.gz`;
+      const tarballFilePath = path.join(temporaryDirectoryPath, tarballFileName);
+
       await new Promise((resolve, reject) => {
         downloadFile(
-          "https://github.com/NMFS-RADFish/boilerplate/archive/refs/tags/latest.tar.gz",
-          "boilerplate.tar.gz",
+          `https://api.github.com/repos/NMFS-RADFish/boilerplate/tarball/${encodeURIComponent(
+            ref,
+          )}`,
+          tarballFilePath,
           (err, res) => {
             if (err) {
               return reject(err);
@@ -51,30 +69,19 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
         );
       });
 
+      const targetDirectoryPath = path.resolve(process.cwd(), targetDirectory);
+
       await new Promise((resolve, reject) => {
-        unzip("boilerplate.tar.gz", (err, res) => {
+        fs.mkdir(targetDirectoryPath, (err) => {
           if (err) {
             return reject(err);
           }
-          resolve(res);
+          resolve();
         });
       });
 
       await new Promise((resolve, reject) => {
-        fs.rename(
-          path.resolve(process.cwd(), "boilerplate-latest"),
-          path.resolve(process.cwd(), targetDirectory),
-          (err, res) => {
-            if (err) {
-              return reject(err);
-            }
-            resolve(res);
-          },
-        );
-      });
-
-      await new Promise((resolve, reject) => {
-        fs.rm(path.resolve(process.cwd(), "boilerplate.tar.gz"), (err, res) => {
+        unzip(tarballFilePath, { outputDirectoryPath: targetDirectoryPath }, (err, res) => {
           if (err) {
             return reject(err);
           }
