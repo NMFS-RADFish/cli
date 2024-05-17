@@ -71,7 +71,7 @@ describe("unzip", () => {
       try {
         expect(child_process.exec).toHaveBeenCalledWith(
           `tar -x -f filepath -C my-app${
-            platform.os === "linux" ? " --wildcards" : ""
+            process.platform === "linux" ? " --wildcards" : ""
           } --exclude .github --strip=3 */examples/main`,
           {
             cwd: process.cwd(),
