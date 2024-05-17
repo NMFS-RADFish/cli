@@ -55,7 +55,7 @@ describe("unzip", () => {
   beforeEach(() => {
     jest.resetModules();
     fs.rmSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true, force: true });
-    fs.mkdirSync(path.resolve(__dirname, "fixtures", "output"));
+    fs.mkdirSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true });
   });
 
   it("should correctly pass arguments when spawning the tar command process", (done) => {
