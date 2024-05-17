@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name("Create Radfish App")
   .description("The CLI to bootstrap a radfish app!")
-  .version("0.0.2");
+  .version("0.1.2");
 
 // program options
 program.argument("<projectDirectoryPath>").option("-r --region <string>", "specified region");
@@ -91,7 +91,7 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
 
       console.log(`Project successfully created.`);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       console.error(`Error cloning repository: ${error.message}`);
       process.exit(1);
     }
