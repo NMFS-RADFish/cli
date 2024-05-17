@@ -2,6 +2,7 @@ const path = require("path");
 const https = require("https");
 const fs = require("fs");
 const child_process = require("child_process");
+const { platform } = require("os");
 
 jest.mock("https");
 
@@ -69,7 +70,9 @@ describe("unzip", () => {
     download.unzip("filepath", { outputDirectoryPath: "my-app" }, () => {
       try {
         expect(child_process.exec).toHaveBeenCalledWith(
-          `tar -x -f filepath -C my-app --exclude .github --strip=3 */examples/main`,
+          `tar -x -f filepath -C my-app${
+            platform.os === "linux" ? " --wildcards" : ""
+          } --exclude .github --strip=3 */examples/main`,
           {
             cwd: process.cwd(),
           },
