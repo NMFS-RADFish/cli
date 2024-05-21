@@ -143,7 +143,6 @@ program.parse(process.argv);
 
 function isValidSourcePath(templatePath) {
   const [directory, template] = templatePath.split(path.sep);
-  console.log({ directory, template });
   if (directory !== "examples" && directory !== "templates") {
     return false;
   }
