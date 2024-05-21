@@ -17,7 +17,9 @@ program
   .version("0.1.2");
 
 // program options
-program.argument("<projectDirectoryPath>").option("-r --region <string>", "specified region");
+program
+  .argument("<projectDirectoryPath>")
+  .option("--template <string>", "specified template", path.join("examples", "main"));
 
 program.action((projectDirectoryPath) => {
   scaffoldRadFishApp(projectDirectoryPath);
@@ -80,13 +82,22 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
         });
       });
 
+      const sourcePath = program.opts().template;
+      if (!isValidSourcePath(sourcePath)) {
+        throw new Error(`Invalid template path: ${sourcePath}`);
+      }
+
       await new Promise((resolve, reject) => {
-        unzip(tarballFilePath, { outputDirectoryPath: targetDirectoryPath }, (err, res) => {
-          if (err) {
-            return reject(err);
-          }
-          resolve(res);
-        });
+        unzip(
+          tarballFilePath,
+          { outputDirectoryPath: targetDirectoryPath, sourcePath: sourcePath },
+          (err, res) => {
+            if (err) {
+              return reject(err);
+            }
+            resolve(res);
+          },
+        );
       });
 
       console.log(`Project successfully created.`);
@@ -129,3 +140,36 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
 
 // this needs to be called after all other program commands...
 program.parse(process.argv);
+
+function isValidSourcePath(templatePath) {
+  const [directory, template] = templatePath.split(path.sep);
+  console.log({ directory, template });
+  if (directory !== "examples" && directory !== "templates") {
+    return false;
+  }
+
+  if (directory === "examples") {
+    switch (template) {
+      case "computed-fields":
+      case "dynamic-form":
+      case "field-validators":
+      case "main":
+      case "multistep-form":
+      case "network-status":
+      case "on-device-storage":
+      case "simple-form":
+      case "simple-table":
+        return true;
+      default:
+        return false;
+    }
+  }
+  if (directory === "templates") {
+    switch (template) {
+      case "react-javascript":
+        return true;
+      default:
+        return false;
+    }
+  }
+}
