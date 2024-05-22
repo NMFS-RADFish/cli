@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 const { execSync } = require("child_process");
 const { confirm } = require("@inquirer/prompts");
-const { Command } = require("commander");
+const { Command, Option } = require("commander");
 const ora = require("ora");
 const path = require("path");
 const { downloadFile, unzip } = require("./lib/download.js");
@@ -17,9 +17,25 @@ program
   .version("0.1.2");
 
 // program options
+program.argument("<projectDirectoryPath>");
+
 program
-  .argument("<projectDirectoryPath>")
-  .option("--template <string>", "specified template", path.join("examples", "main"));
+  .addOption(new Option("--template <name>", "specified template").choices(["react-javascript"]))
+  .addOption(
+    new Option("--example <name>", "specified example")
+      .choices([
+        "computed-fields",
+        "dynamic-form",
+        "field-validators",
+        "main",
+        "multistep-form",
+        "network-status",
+        "on-device-storage",
+        "simple-form",
+        "simple-table",
+      ])
+      .conflicts("template"),
+  );
 
 program.action((projectDirectoryPath) => {
   scaffoldRadFishApp(projectDirectoryPath);
@@ -82,10 +98,20 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
         });
       });
 
-      const sourcePath = program.opts().template;
-      if (!isValidSourcePath(sourcePath)) {
-        throw new Error(`Invalid template path: ${sourcePath}`);
+      const options = program.opts();
+
+      let sourceType = "";
+      let sourceProjectDirectory = "";
+
+      if (options.template) {
+        sourceType = "templates";
+        sourceProjectDirectory = options.template;
+      } else if (options.example) {
+        sourceType = "examples";
+        sourceProjectDirectory = options.example;
       }
+
+      const sourcePath = path.join(sourceType, sourceProjectDirectory);
 
       await new Promise((resolve, reject) => {
         unzip(
@@ -140,35 +166,3 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
 
 // this needs to be called after all other program commands...
 program.parse(process.argv);
-
-function isValidSourcePath(templatePath) {
-  const [directory, template] = templatePath.split(path.sep);
-  if (directory !== "examples" && directory !== "templates") {
-    return false;
-  }
-
-  if (directory === "examples") {
-    switch (template) {
-      case "computed-fields":
-      case "dynamic-form":
-      case "field-validators":
-      case "main":
-      case "multistep-form":
-      case "network-status":
-      case "on-device-storage":
-      case "simple-form":
-      case "simple-table":
-        return true;
-      default:
-        return false;
-    }
-  }
-  if (directory === "templates") {
-    switch (template) {
-      case "react-javascript":
-        return true;
-      default:
-        return false;
-    }
-  }
-}
