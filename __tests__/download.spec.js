@@ -67,22 +67,26 @@ describe("unzip", () => {
     }));
     const child_process = require("child_process");
     const download = require("../lib/download");
-    download.unzip("filepath", { outputDirectoryPath: "my-app" }, () => {
-      try {
-        expect(child_process.exec).toHaveBeenCalledWith(
-          `tar -x -f filepath -C my-app${
-            process.platform === "linux" ? " --wildcards" : ""
-          } --exclude .github --strip=3 */examples/main`,
-          {
-            cwd: process.cwd(),
-          },
-          expect.any(Function),
-        );
-        done();
-      } catch (err) {
-        done(err);
-      }
-    });
+    download.unzip(
+      "filepath",
+      { outputDirectoryPath: "my-app", sourcePath: "examples/main" },
+      () => {
+        try {
+          expect(child_process.exec).toHaveBeenCalledWith(
+            `tar -x -f filepath -C my-app${
+              process.platform === "linux" ? " --wildcards" : ""
+            } --exclude .github --strip=3 */examples/main`,
+            {
+              cwd: process.cwd(),
+            },
+            expect.any(Function),
+          );
+          done();
+        } catch (err) {
+          done(err);
+        }
+      },
+    );
   });
 
   it("should ignore the .github folder", (done) => {
@@ -94,16 +98,20 @@ describe("unzip", () => {
     const zippath = path.resolve(__dirname, "fixtures", "output.tar.gz");
     const targetDirectoryPath = path.resolve(__dirname, "fixtures", "output");
 
-    download.unzip(zippath, { outputDirectoryPath: targetDirectoryPath }, (err) => {
-      try {
-        expect(err).toBeNull();
-        fs.readdir(targetDirectoryPath, (err, files) => {
-          expect(files).not.toContain(".github");
-          done();
-        });
-      } catch (err) {
-        done(err);
-      }
-    });
+    download.unzip(
+      zippath,
+      { outputDirectoryPath: targetDirectoryPath, sourcePath: "examples/main" },
+      (err) => {
+        try {
+          expect(err).toBeNull();
+          fs.readdir(targetDirectoryPath, (err, files) => {
+            expect(files).not.toContain(".github");
+            done();
+          });
+        } catch (err) {
+          done(err);
+        }
+      },
+    );
   });
 });
