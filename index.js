@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 const { execSync } = require("child_process");
 const { confirm } = require("@inquirer/prompts");
+const select = require("@inquirer/select").default;
 const { Command, Option } = require("commander");
 const ora = require("ora");
 const path = require("path");
-const { downloadFile, unzip } = require("./lib/download.js");
 const fs = require("fs");
 const os = require("os");
 const crypto = require("crypto");
+const https = require("https");
+
+const { downloadFile, unzip } = require("./lib/download.js");
 
 const program = new Command();
 
@@ -16,30 +19,72 @@ program
   .description("The CLI to bootstrap a radfish app!")
   .version("0.1.2");
 
-// program options
-program.argument("<projectDirectoryPath>");
+let examples = [];
 
-program
-  .addOption(new Option("--template <name>", "specified template").choices(["react-javascript"]))
-  .addOption(
-    new Option("--example <name>", "specified example")
-      .choices([
-        "computed-fields",
-        "dynamic-form",
-        "field-validators",
-        "main",
-        "multistep-form",
-        "network-status",
-        "on-device-storage",
-        "simple-form",
-        "simple-table",
-      ])
-      .conflicts("template"),
-  );
+(async function run(argsv) {
+  examples = await getExamples();
 
-program.action((projectDirectoryPath) => {
-  scaffoldRadFishApp(projectDirectoryPath);
-});
+  await bootstrap(program);
+  program.parse(argsv);
+})(process.argv);
+
+function getExamples() {
+  return new Promise((resolve, reject) => {
+    const requestUrl = new URL(
+      "https://api.github.com/repos/nmfs-radfish/boilerplate/contents/examples",
+    );
+    const options = {
+      hostname: requestUrl.hostname,
+      path: requestUrl.pathname,
+      headers: {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "radfish-cli/0.0.1",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+    };
+    https.get(options, function (response) {
+      if (response.statusCode >= 400) {
+        return reject(new Error("Failed to download file"));
+      }
+
+      if (response.statusCode === 200) {
+        let data = "";
+        response.on("data", (chunk) => {
+          data += chunk;
+        });
+
+        response.on("end", () => {
+          const examples = JSON.parse(data);
+          resolve(examples.filter((example) => example.type === "dir"));
+        });
+      }
+    });
+  });
+}
+
+async function bootstrap(program) {
+  program
+    .addOption(new Option("--template [name]", "specified template").choices(["react-javascript"]))
+    .addOption(
+      new Option("--example [name]", "specified example")
+        .choices(examples.map((example) => example.name))
+        .conflicts("template"),
+    );
+
+  // program options
+  program.argument("<projectDirectoryPath>");
+
+  program.action((projectDirectoryPath) => {
+    scaffoldRadFishApp(projectDirectoryPath);
+  });
+}
+
+async function selectExample(examples) {
+  return await select({
+    message: "Select an example",
+    choices: examples.map((example) => ({ name: example.name, value: example.name })),
+  });
+}
 
 async function scaffoldRadFishApp(projectDirectoryPath) {
   const targetDirectory = path.resolve(
@@ -50,11 +95,11 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
   async function confirmConfiguration() {
     return await confirm({
       message: `You are about to scaffold an application in the following project directory: ${targetDirectory}
-      Okay to proceed?`,
+    Okay to proceed?`,
     });
   }
 
-  async function bootstrapApp() {
+  async function bootstrapApp(options) {
     const spinner = ora("Setting up application").start();
     const ref = "latest";
 
@@ -97,8 +142,6 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
           resolve();
         });
       });
-
-      const options = program.opts();
 
       let sourceType = "";
       let sourceProjectDirectory = "";
@@ -157,12 +200,16 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
     spinner.stop();
   }
 
+  const options = program.opts();
+
+  let example = options.example;
+  if (example === true) {
+    example = await selectExample(examples);
+  }
+
   const confirmation = await confirmConfiguration();
 
   if (confirmation) {
-    await bootstrapApp();
+    await bootstrapApp({ ...options, example });
   }
 }
-
-// this needs to be called after all other program commands...
-program.parse(process.argv);
