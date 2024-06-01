@@ -17,7 +17,7 @@ const program = new Command();
 program
   .name("Create Radfish App")
   .description("The CLI to bootstrap a radfish app!")
-  .version("0.1.2");
+  .version("0.2.1");
 
 let examples = [];
 
@@ -87,14 +87,12 @@ async function selectExample(examples) {
 }
 
 async function scaffoldRadFishApp(projectDirectoryPath) {
-  const targetDirectory = path.resolve(
-    process.cwd(),
-    `${projectDirectoryPath.trim().replace(/\s+/g, "-")}`, // replace whitespaces in the filepath
-  );
+  const targetDirectory = `${projectDirectoryPath.trim().replace(/\s+/g, "-")}`; // replace whitespaces in the filepath
+  const targetDirectoryPath = path.resolve(process.cwd(), targetDirectory);
 
   async function confirmConfiguration() {
     return await confirm({
-      message: `You are about to scaffold an application in the following project directory: ${targetDirectory}
+      message: `You are about to scaffold an application in the following project directory: ${targetDirectoryPath}
     Okay to proceed?`,
     });
   }
@@ -132,8 +130,6 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
         );
       });
 
-      const targetDirectoryPath = path.resolve(process.cwd(), targetDirectory);
-
       await new Promise((resolve, reject) => {
         fs.mkdir(targetDirectoryPath, (err) => {
           if (err) {
@@ -169,29 +165,27 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
         );
       });
 
-      console.log(`Project successfully created.`);
+      console.log(`\nProject successfully created.`);
     } catch (error) {
       console.error(error);
       console.error(`Error cloning repository: ${error.message}`);
       process.exit(1);
     }
 
-    // Change to the cloned repository directory
-    process.chdir(targetDirectory);
-
     // Run an npm script (replace 'your-script-name' with the actual npm script name)
     try {
-      execSync("npm install", { stdio: "inherit" });
+      execSync("npm install", { stdio: "inherit", cwd: targetDirectoryPath });
       console.log(`node modules successfully installed.`);
     } catch (error) {
       console.error(`Error running npm script: ${error.message}`);
       process.exit(1);
     }
 
-    // Run an npm script (replace 'your-script-name' with the actual npm script name)
     try {
-      console.log(`Starting app. Happy hacking :)`);
-      execSync("npm start", { stdio: "inherit" });
+      console.log(`Success! Created ${targetDirectory} at ${targetDirectoryPath}`);
+      console.log(`\nWe suggest that you begin by typing:`);
+      console.log(`  cd ${targetDirectory}`);
+      console.log(`  npm start\n`);
     } catch (error) {
       console.error(`Error running npm script: ${error.message}`);
       process.exit(1);
