@@ -2,6 +2,9 @@
   "name": "@nmfs-radfish/create-radfish-app",
   "version": "0.2.1",
   "description": "A cli tool for bootstrapping a radfish app",
+  "engines": {
+    "node": ">=20"
+  },
   "bin": {
     "create-radfish-app": "./index.js"
   },
