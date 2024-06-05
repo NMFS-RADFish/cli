@@ -139,8 +139,8 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
         });
       });
 
-      let sourceType = "";
-      let sourceProjectDirectory = "";
+      let sourceType = "templates";
+      let sourceProjectDirectory = "react-javascript";
 
       if (options.template) {
         sourceType = "templates";
