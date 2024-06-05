@@ -186,6 +186,7 @@ async function scaffoldRadFishApp(projectDirectoryPath) {
       console.log(`\nWe suggest that you begin by typing:`);
       console.log(`  cd ${targetDirectory}`);
       console.log(`  npm start\n`);
+      process.exit(0);
     } catch (error) {
       console.error(`Error running npm script: ${error.message}`);
       process.exit(1);
