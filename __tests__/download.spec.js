@@ -30,7 +30,9 @@ describe("downloadFile", () => {
 
     download.downloadFile("https://example.com", "download/path", (err, res) => {
       try {
-        expect(fs.createWriteStream).toHaveBeenCalledWith(expect.stringMatching("download/path"));
+        const expectedPath = path.join("download", "path");
+        const receivedPath = expect.stringMatching(new RegExp(`${expectedPath.replace(/\\/g, '\\\\')}$`));
+        expect(fs.createWriteStream).toHaveBeenCalledWith(receivedPath);
         expect(https.get).toHaveBeenCalledWith(
           {
             hostname: "example.com",
