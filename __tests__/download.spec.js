@@ -1,6 +1,7 @@
 const path = require("path");
 const https = require("https");
 const fs = require("fs");
+const os = require("os");
 
 jest.mock("https");
 
@@ -76,23 +77,48 @@ describe("unzip", () => {
 
     const download = require("../lib/download");
     const filepath = "filepath";
-    const tempDir = path.resolve(path.dirname(filepath), "temp_unzip");
-    const sourcePath = path.join("examples", "main");
+    const filepathDir = path.resolve(path.dirname(filepath));
+    const tempDirPrefix = "temp-unzip-";
 
-    download.unzip(filepath, { outputDirectoryPath: "my-app", sourcePath }, () => {
-      try {
-        expect(execMock).toHaveBeenCalled();
+    // Determine the system temporary directory path
+    const systemTempDir = os.tmpdir();
+    const mockTempDirPrefix = path.join(systemTempDir, tempDirPrefix);
 
-        expect(execMock).toHaveBeenCalledWith(
-          `tar -x -f ${filepath} -C ${tempDir} --exclude .github`,
-          { cwd: path.resolve(path.dirname(filepath)) },
-          expect.any(Function),
-        );
-        done();
-      } catch (err) {
-        done(err);
-      }
-    });
+    // Mock the behavior of fs.promises.mkdtemp
+    const originalMkdtemp = fs.promises.mkdtemp;
+    const targetDirectoryPath = path.resolve(__dirname, "fixtures", "output");
+
+    download.unzip(
+      filepath,
+      { outputDirectoryPath: targetDirectoryPath, sourcePath: "examples/main" },
+      () => {
+        try {
+          expect(execMock).toHaveBeenCalled();
+
+          // Extract the actual temp directory used in the exec command
+          const calledCommand = execMock.mock.calls[0][0];
+          const tempDirMatch = calledCommand.match(/-C (.+?) /);
+          const tempDir = tempDirMatch ? tempDirMatch[1] : null;
+
+          // Verify that the temp directory path is as expected
+          const tempDirHash = tempDir.replace(mockTempDirPrefix, "");
+          const expectedTempDir = `${mockTempDirPrefix}${tempDirHash}`;
+
+          expect(tempDir).toBe(expectedTempDir);
+
+          expect(execMock).toHaveBeenCalledWith(
+            `tar -x -f ${filepath} -C ${expectedTempDir} --exclude .github`,
+            { cwd: filepathDir },
+            expect.any(Function),
+          );
+          done();
+        } catch (err) {
+          done(err);
+        } finally {
+          fs.promises.mkdtemp = originalMkdtemp;
+        }
+      },
+    );
   });
 
   it("should ignore the .github folder", (done) => {
