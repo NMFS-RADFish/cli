@@ -4,35 +4,29 @@ const fs = require("fs");
 const os = require("os");
 
 jest.mock("https");
+jest.mock("fs", () => {
+  const originalFs = jest.requireActual("fs");
+  return {
+    ...originalFs,
+    createWriteStream: jest.fn(),
+  };
+});
 
 describe("downloadFile", () => {
+  https.get.mockImplementationOnce((url, callback) => {
+    const response = {
+      statusCode: 200,
+      pipe: jest.fn(),
+    };
+    callback(response);
+    return response;
+  });
+  fs.createWriteStream.mockReturnValueOnce({
+    on: jest.fn((event, callback) => callback(null)),
+    close: jest.fn((callback) => callback(null)),
+  });
+
   it("should download a file", (done) => {
-    https.get.mockImplementationOnce((url, callback) => {
-      const response = {
-        statusCode: 200,
-        pipe: jest.fn(),
-      };
-      callback(response);
-      return response;
-    });
-    jest.mock("fs", () => {
-      const originalFs = jest.requireActual("fs");
-      return {
-        createWriteStream: jest.fn(),
-        promises: {
-          ...originalFs.promises,
-        },
-      };
-    });
-    const fs = require("fs");
-    fs.createWriteStream.mockReturnValueOnce({
-      on: jest.fn((event, callback) => {
-        callback(null);
-      }),
-      close: jest.fn((callback) => {
-        callback(null);
-      }),
-    });
     const download = require("../lib/download");
 
     download.downloadFile("https://example.com", "download/path", (err, res) => {
@@ -60,32 +54,36 @@ describe("downloadFile", () => {
 });
 
 describe("unzip", () => {
-  beforeEach(() => {
-    jest.resetModules();
-    fs.rmSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true, force: true });
-    fs.mkdirSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true });
+  const execMock = jest.fn((command, options, callback) => {
+    callback(null, "stdout", "stderr");
   });
 
-  it("should correctly pass arguments when spawning the tar command process", (done) => {
-    const execMock = jest.fn((command, options, callback) => {
-      callback(null, "stdout", "stderr");
-    });
+  beforeEach(() => {
+    jest.resetModules();
+    jest.clearAllMocks();
 
+    fs.rmSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true, force: true });
+    fs.mkdirSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true });
+
+    // Mock child_process.exec for this test
     jest.doMock("child_process", () => ({
       exec: execMock,
     }));
+  });
 
+  afterEach(() => {
+    jest.unmock("child_process");
+    jest.unmock("fs");
+  });
+
+  it("should correctly pass arguments when spawning the tar command process", (done) => {
     const download = require("../lib/download");
     const filepath = "filepath";
     const filepathDir = path.resolve(path.dirname(filepath));
     const tempDirPrefix = "temp-unzip-";
 
-    // Determine the system temporary directory path
     const systemTempDir = os.tmpdir();
     const mockTempDirPrefix = path.join(systemTempDir, tempDirPrefix);
-
-    // Mock the behavior of fs.promises.mkdtemp
-    const originalMkdtemp = fs.promises.mkdtemp;
     const targetDirectoryPath = path.resolve(__dirname, "fixtures", "output");
 
     download.unzip(
@@ -94,7 +92,6 @@ describe("unzip", () => {
       () => {
         try {
           expect(execMock).toHaveBeenCalled();
-
           // Extract the actual temp directory used in the exec command
           const calledCommand = execMock.mock.calls[0][0];
           const tempDirMatch = calledCommand.match(/-C (.+?) /);
@@ -114,8 +111,6 @@ describe("unzip", () => {
           done();
         } catch (err) {
           done(err);
-        } finally {
-          fs.promises.mkdtemp = originalMkdtemp;
         }
       },
     );
