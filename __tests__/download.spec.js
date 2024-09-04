@@ -1,36 +1,37 @@
 const path = require("path");
 const https = require("https");
 const fs = require("fs");
-const child_process = require("child_process");
-const { platform } = require("os");
+const os = require("os");
 
 jest.mock("https");
+jest.mock("fs", () => {
+  const originalFs = jest.requireActual("fs");
+  return {
+    ...originalFs,
+    createWriteStream: jest.fn(),
+  };
+});
 
 describe("downloadFile", () => {
+  https.get.mockImplementationOnce((url, callback) => {
+    const response = {
+      statusCode: 200,
+      pipe: jest.fn(),
+    };
+    callback(response);
+    return response;
+  });
+  fs.createWriteStream.mockReturnValueOnce({
+    on: jest.fn((event, callback) => callback(null)),
+    close: jest.fn((callback) => callback(null)),
+  });
+
   it("should download a file", (done) => {
-    https.get.mockImplementationOnce((url, callback) => {
-      const response = {
-        statusCode: 200,
-        pipe: jest.fn(),
-      };
-      callback(response);
-      return response;
-    });
-    jest.mock("fs");
-    const fs = require("fs");
-    fs.createWriteStream.mockReturnValueOnce({
-      on: jest.fn((event, callback) => {
-        callback(null);
-      }),
-      close: jest.fn((callback) => {
-        callback(null);
-      }),
-    });
     const download = require("../lib/download");
 
     download.downloadFile("https://example.com", "download/path", (err, res) => {
       try {
-        expect(fs.createWriteStream).toHaveBeenCalledWith(expect.stringMatching("download/path"));
+        expect(fs.createWriteStream).toHaveBeenCalledWith(path.resolve("download/path"));
         expect(https.get).toHaveBeenCalledWith(
           {
             hostname: "example.com",
@@ -53,32 +54,58 @@ describe("downloadFile", () => {
 });
 
 describe("unzip", () => {
+  const execMock = jest.fn((command, options, callback) => {
+    callback(null, "stdout", "stderr");
+  });
+
   beforeEach(() => {
     jest.resetModules();
+    jest.clearAllMocks();
+
     fs.rmSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true, force: true });
     fs.mkdirSync(path.resolve(__dirname, "fixtures", "output"), { recursive: true });
+
+    // Mock child_process.exec for this test
+    jest.doMock("child_process", () => ({
+      exec: execMock,
+    }));
+  });
+
+  afterEach(() => {
+    jest.unmock("child_process");
+    jest.unmock("fs");
   });
 
   it("should correctly pass arguments when spawning the tar command process", (done) => {
-    jest.doMock("child_process", () => ({
-      exec: jest.fn((command, options, callback) => {
-        callback(null, "stdout", "stderr");
-      }),
-    }));
-    const child_process = require("child_process");
     const download = require("../lib/download");
+    const filepath = "filepath";
+    const filepathDir = path.resolve(path.dirname(filepath));
+    const tempDirPrefix = "temp-unzip-";
+
+    const systemTempDir = os.tmpdir();
+    const mockTempDirPrefix = path.join(systemTempDir, tempDirPrefix);
+    const targetDirectoryPath = path.resolve(__dirname, "fixtures", "output");
+
     download.unzip(
-      "filepath",
-      { outputDirectoryPath: "my-app", sourcePath: "examples/main" },
+      filepath,
+      { outputDirectoryPath: targetDirectoryPath, sourcePath: "examples/main" },
       () => {
         try {
-          expect(child_process.exec).toHaveBeenCalledWith(
-            `tar -x -f filepath -C my-app${
-              process.platform === "linux" ? " --wildcards" : ""
-            } --exclude .github --strip=3 */examples/main`,
-            {
-              cwd: process.cwd(),
-            },
+          expect(execMock).toHaveBeenCalled();
+          // Extract the actual temp directory used in the exec command
+          const calledCommand = execMock.mock.calls[0][0];
+          const tempDirMatch = calledCommand.match(/-C (.+?) /);
+          const tempDir = tempDirMatch ? tempDirMatch[1] : null;
+
+          // Verify that the temp directory path is as expected
+          const tempDirHash = tempDir.replace(mockTempDirPrefix, "");
+          const expectedTempDir = `${mockTempDirPrefix}${tempDirHash}`;
+
+          expect(tempDir).toBe(expectedTempDir);
+
+          expect(execMock).toHaveBeenCalledWith(
+            `tar -x -f ${filepath} -C ${expectedTempDir} --exclude .github`,
+            { cwd: filepathDir },
             expect.any(Function),
           );
           done();
@@ -92,8 +119,6 @@ describe("unzip", () => {
   it("should ignore the .github folder", (done) => {
     jest.unmock("child_process");
     jest.unmock("fs");
-    const child_process = require("child_process");
-    const fs = require("fs");
     const download = require("../lib/download");
     const zippath = path.resolve(__dirname, "fixtures", "output.tar.gz");
     const targetDirectoryPath = path.resolve(__dirname, "fixtures", "output");
