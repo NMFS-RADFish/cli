@@ -9,6 +9,7 @@ const fs = require("fs");
 const os = require("os");
 const crypto = require("crypto");
 const https = require("https");
+const CLI_VERSION = require("./package.json").version;
 
 const { downloadFile, unzip } = require("./lib/download.js");
 
@@ -17,7 +18,7 @@ const program = new Command();
 program
   .name("Create Radfish App")
   .description("The CLI to bootstrap a radfish app!")
-  .version("0.2.1");
+  .version(CLI_VERSION);
 
 let examples = [];
 
@@ -38,7 +39,7 @@ function getExamples() {
       path: requestUrl.pathname,
       headers: {
         Accept: "application/vnd.github+json",
-        "User-Agent": "radfish-cli/0.0.1",
+        "User-Agent": `radfish-cli/${CLI_VERSION}`,
         "X-GitHub-Api-Version": "2022-11-28",
       },
     };
