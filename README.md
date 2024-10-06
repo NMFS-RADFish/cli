@@ -17,3 +17,7 @@ npx @nmfs-radfish/create-radfish-app my-pwa
 ```
 
 Provide the cli the name of your new project. A new project will be created using the [default boilerplate template](https://github.com/NMFS-RADFish/boilerplate).
+
+# Contributing
+
+Thank you for considering contributing to this project! Contributions of all kinds are welcome, whether it’s bug reporting, feature requests, improving documentation, or submitting code. Before you get started, please take a moment to read through our [contribution guidelines](https://nmfs-radfish.github.io/radfish/about/contribute).
